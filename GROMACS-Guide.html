@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GROMACS Protein-Ligand Simulation Guide</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #0f766e;
+            --primary-light: #0d9488;
+            --secondary: #f97316;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --gray: #94a3b8;
+            --border: #e2e8f0;
+            --highlight: #fffbeb;
+            --highlight-border: #f59e0b;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+        /* Sidebar Styles */
+        .sidebar {
+            width: 280px;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: white;
+            padding: 1.5rem 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+        }
+        .logo {
+            padding: 0 1.5rem 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 1.5rem;
+        }
+        .logo h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .logo span {
+            color: var(--secondary);
+        }
+        .logo p {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-top: 0.25rem;
+        }
+        .nav-section {
+            margin-bottom: 2rem;
+            padding: 0 1.5rem;
+        }
+        .nav-section h3 {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 1rem;
+            color: var(--gray);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .nav-links {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        .nav-link {
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: all 0.3s ease;
+            color: #cbd5e1;
+            text-decoration: none;
+            font-size: 0.95rem;
+        }
+        .nav-link:hover, .nav-link.active {
+            background: rgba(13, 148, 136, 0.2);
+            color: white;
+        }
+        .nav-link i {
+            width: 24px;
+            text-align: center;
+        }
+        .github-section {
+            margin-top: auto;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 0.75rem;
+            margin: 1.5rem;
+        }
+        .github-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            background: var(--secondary);
+            color: white;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }
+        .github-btn:hover {
+            background: #ea580c;
+            transform: translateY(-2px);
+        }
+        /* Main Content Styles */
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 2rem;
+        }
+        .header {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        .header h2 {
+            font-size: 1.75rem;
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+        .header p {
+            color: #64748b;
+            margin-bottom: 1.5rem;
+            max-width: 800px;
+        }
+        .stats {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        .stat-card {
+            background: #f0fdfa;
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            flex: 1;
+            border-left: 4px solid var(--primary-light);
+        }
+        .stat-card h3 {
+            font-size: 0.9rem;
+            color: #64748b;
+            margin-bottom: 0.5rem;
+        }
+        .stat-card p {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 0;
+        }
+        /* Download Resources Section */
+        .download-section {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--border);
+        }
+        .resources-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+        .resource-card {
+            background: #f8fafc;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+        .resource-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary-light);
+        }
+        .resource-icon {
+            width: 56px;
+            height: 56px;
+            background: #ecfeff;
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            color: var(--primary);
+            font-size: 1.5rem;
+        }
+        .resource-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+        }
+        .resource-card p {
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            min-height: 60px;
+        }
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--primary);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+        .download-btn:hover {
+            background: var(--primary-light);
+        }
+        /* Steps Section */
+        .steps-container {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        .step-card {
+            background: #f8fafc;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-left: 3px solid var(--primary);
+            transition: all 0.3s ease;
+        }
+        .step-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .step-number {
+            width: 36px;
+            height: 36px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .step-card h3 {
+            font-size: 1.25rem;
+            color: var(--dark);
+        }
+        .step-content {
+            padding-left: 52px;
+        }
+        .step-content p {
+            margin-bottom: 1rem;
+            color: #475569;
+        }
+        .command-block {
+            background: #0f172a;
+            color: #e2e8f0;
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            margin: 1rem 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95rem;
+            position: relative;
+            overflow-x: auto;
+            transition: all 0.3s ease;
+        }
+        .command-block:hover {
+            box-shadow: 0 0 0 2px var(--primary-light);
+        }
+        .copy-btn {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            background: rgba(255, 255, 255, 0.1);
+            color: #94a3b8;
+            border: none;
+            padding: 0.4rem 0.8rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        .copy-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-1px);
+        }
+        .copy-btn.copied {
+            background: #0d9488;
+            color: white;
+        }
+        .command-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .note {
+            background: var(--highlight);
+            border-left: 3px solid var(--highlight-border);
+            padding: 1rem;
+            border-radius: 0 0.5rem 0.5rem 0;
+            margin: 1rem 0;
+        }
+        .note-title {
+            font-weight: 600;
+            color: #92400e;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .tip {
+            background: #f0fdf4;
+            border-left: 3px solid var(--primary);
+            padding: 1rem;
+            border-radius: 0 0.5rem 0.5rem 0;
+            margin: 1rem 0;
+        }
+        .tip-title {
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .pdb-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+        .pdb-table th {
+            background-color: var(--primary);
+            color: white;
+            padding: 0.75rem;
+            text-align: left;
+        }
+        .pdb-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .pdb-table tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        .pdb-table tr:hover {
+            background-color: #f0fdf4;
+        }
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: #64748b;
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border);
+            margin-top: 2rem;
+        }
+        .footer a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 240px;
+            }
+            .main-content {
+                margin-left: 240px;
+            }
+        }
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                position: relative;
+                height: auto;
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .stats {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <h1>GROM<span>ACS</span></h1>
+                <p>Protein-Ligand Simulation</p>
+            </div>
+            <div class="nav-section">
+                <h3><i class="fas fa-sitemap"></i> Workflow Navigation</h3>
+                <div class="nav-links">
+                    <a href="#resources" class="nav-link active">
+                        <i class="fas fa-download"></i>
+                        <span>Download Resources</span>
+                    </a>
+                    <a href="#prep" class="nav-link">
+                        <i class="fas fa-vial"></i>
+                        <span>Preparation</span>
+                    </a>
+                    <a href="#simulation" class="nav-link">
+                        <i class="fas fa-cogs"></i>
+                        <span>Simulation</span>
+                    </a>
+                    <a href="#analysis" class="nav-link">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Analysis</span>
+                    </a>
+                </div>
+            </div>
+            <div class="nav-section">
+                <h3><i class="fas fa-book"></i> Documentation</h3>
+                <div class="nav-links">
+                    <a href="https://manual.gromacs.org/current/user-guide/index.html" target="_blank" rel="noopener noreferrer" class="nav-link">
+                        <i class="fas fa-book-open"></i>
+                        <span>GROMACS Manual</span>
+                    </a>
+                    <a href="http://www.mdtutorials.com/gmx/index.html" target="_blank" rel="noopener noreferrer" class="nav-link">
+                        <i class="fas fa-graduation-cap"></i>
+                        <span>Tutorials</span>
+                    </a>
+                    <a href="https://pubs.acs.org/doi/10.1021/acs.jcim.5b00654" target="_blank" rel="noopener noreferrer" class="nav-link">
+                        <i class="fas fa-flask"></i>
+                        <span>Best Practices Paper</span>
+                    </a>
+                    <a href="https://www.charmm-gui.org/?doc=input/cgenff" target="_blank" rel="noopener noreferrer" class="nav-link">
+                        <i class="fas fa-server"></i>
+                        <span>CGenFF Server</span>
+                    </a>
+                </div>
+            </div>
+            <div class="github-section">
+                <p>Share, contribute, or report issues:</p>
+                <a href="https://github.com/Deon-07" target="_blank" rel="noopener noreferrer" class="github-btn">
+                    <i class="fab fa-github"></i>
+                    <span>View on GitHub</span>
+                </a>
+                <p class="mt-4">Built with <i class="fas fa-heart" style="color: var(--secondary);"></i> by Deon</p>
+            </div>
+        </div>
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <h2>Interactive GROMACS Simulation Guide</h2>
+                <p>A comprehensive, step-by-step guide to running a protein-ligand molecular dynamics simulation using GROMACS. This guide covers preparation, simulation, and analysis phases with a focus on a 10ns production run. Includes expert tips for ensuring simulation quality and reliable results.</p>
+                <div class="stats">
+                    <div class="stat-card">
+                        <h3>Total Steps</h3>
+                        <p>12</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Production Run</h3>
+                        <p>10 ns</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Estimated Time</h3>
+                        <p>24-48 hrs</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Download Resources Section -->
+            <div class="download-section" id="resources">
+                <h2 class="section-title">
+                    <i class="fas fa-cloud-download-alt"></i>
+                    Download Resources
+                </h2>
+                <p>Download these essential MDP configuration templates for your protein-ligand simulation workflow. Each template is optimized for its specific simulation phase.</p>
+                <div class="resources-grid">
+                    <div class="resource-card">
+                        <div class="resource-icon">
+                            <i class="fas fa-compress-arrows-alt"></i>
+                        </div>
+                        <h3>minim.mdp</h3>
+                        <p>Energy minimization template to relax the system and remove bad contacts. Uses steepest descent followed by conjugate gradient.</p>
+                        <a href="http://www.mdtutorials.com/gmx/complex/Files/em.mdp" target="_blank" rel="noopener noreferrer" class="download-btn">
+                            <i class="fas fa-download"></i>
+                            Download
+                        </a>
+                    </div>
+                    <div class="resource-card">
+                        <div class="resource-icon">
+                            <i class="fas fa-thermometer-half"></i>
+                        </div>
+                        <h3>nvt.mdp</h3>
+                        <p>NVT equilibration template for constant volume and temperature phase. Uses velocity rescaling thermostat with modified Berendsen algorithm.</p>
+                        <a href="http://www.mdtutorials.com/gmx/complex/Files/nvt.mdp" target="_blank" rel="noopener noreferrer" class="download-btn">
+                            <i class="fas fa-download"></i>
+                            Download
+                        </a>
+                    </div>
+                    <div class="resource-card">
+                        <div class="resource-icon">
+                            <i class="fas fa-tachometer-alt"></i>
+                        </div>
+                        <h3>npt.mdp</h3>
+                        <p>NPT equilibration template for constant pressure and temperature phase. Uses Parrinello-Rahman barostat for anisotropic pressure coupling.</p>
+                        <a href="http://www.mdtutorials.com/gmx/complex/Files/npt.mdp" target="_blank" rel="noopener noreferrer" class="download-btn">
+                            <i class="fas fa-download"></i>
+                            Download
+                        </a>
+                    </div>
+                    <div class="resource-card">
+                        <div class="resource-icon">
+                            <i class="fas fa-running"></i>
+                        </div>
+                        <h3>md.mdp</h3>
+                        <p>Production MD template for the 10ns simulation phase (unrestrained). Includes proper settings for long trajectories and trajectory compression.</p>
+                        <a href="http://www.mdtutorials.com/gmx/complex/Files/md.mdp" target="_blank" rel="noopener noreferrer" class="download-btn">
+                            <i class="fas fa-download"></i>
+                            Download
+                        </a>
+                    </div>
+                    <div class="resource-card">
+                        <div class="resource-icon">
+                            <i class="fas fa-handshake"></i>
+                        </div>
+                        <h3>ie.mdp</h3>
+                        <p>Interaction energy calculation template for protein-ligand analysis. Configured for MM/PBSA compatible energy extraction.</p>
+                        <a href="http://www.mdtutorials.com/gmx/complex/Files/ie.mdp" target="_blank" rel="noopener noreferrer" class="download-btn">
+                            <i class="fas fa-download"></i>
+                            Download
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="tip">
+                    <div class="tip-title"><i class="fas fa-lightbulb"></i> Force Field Selection</div>
+                    <p>For protein-ligand simulations, consider these force field combinations:</p>
+                    <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                        <li><strong>amber99sb-ildn</strong> + <strong>GAFF2</strong>: Best for most drug-like ligands with good water model compatibility</li>
+                        <li><strong>charmm36m</strong> + <strong>CGenFF</strong>: Preferred for membrane proteins and complex carbohydrates</li>
+                        <li><strong>oplsaa</strong> + <strong>ligpargen</strong>: Good for organic molecules with specialized parameterization</li>
+                    </ul>
+                </div>
+                
+                <div class="note">
+                    <p class="note-title"><i class="fas fa-exclamation-circle"></i> Important Note</p>
+                    <p>Save these MDP files in your simulation directory. You will reference them throughout the simulation workflow. Before using, verify that parameters match your specific system requirements.</p>
+                </div>
+            </div>
+            
+            <!-- Steps Section -->
+            <div class="steps-container" id="prep">
+                <h2 class="section-title">
+                    <i class="fas fa-vial"></i>
+                    Preparation Phase
+                </h2>
+                
+                <div class="step-card">
+                    <div class="step-header">
+                        <div class="step-number">1</div>
+                        <h3>Protein Preparation</h3>
+                    </div>
+                    <div class="step-content">
+                        <p>Process your protein's PDB file to apply a force field and generate a GROMACS-formatted structure file.</p>
+                        
+                        <div class="command-block">
+                            <button class="copy-btn"><i class="fas fa-copy"></i> Copy</button>
+                            <div class="command-title"><i class="fas fa-terminal"></i> Protein Processing Command</div>
+                            <pre>gmx pdb2gmx -f REC.pdb -o REC.gro -ter -ignh</pre>
+                        </div>
+                        
+                        <div class="tip">
+                            <div class="tip-title"><i class="fas fa-lightbulb"></i> Expert Tip: Protonation States</div>
+                            <p>Pay special attention to the protonation states of key residues in the binding site. For accurate binding energy calculations:</p>
+                            <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                                <li>Use tools like PROPKA (via pdb2pqr) to predict pKa values at physiological pH</li>
+                                <li>For catalytic residues (e.g., aspartic acid in proteases), manually verify protonation</li>
+                                <li>Consider running simulations with different protonation states for pH-dependent systems</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="note">
+                            <p class="note-title"><i class="fas fa-exclamation-circle"></i> Critical Checkpoint</p>
+                            <p>After processing, visualize your protein to ensure disulfide bonds are correctly formed (CYS residues with SG atoms < 2.2 Å apart should be bonded).</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="step-card">
+                    <div class="step-header">
+                        <div class="step-number">2</div>
+                        <h3>Ligand Preparation</h3>
+                    </div>
+                    <div class="step-content">
+                        <p>Generate the topology and parameter files for your ligand using ACPYPE or CGenFF (for CHARMM force field).</p>
+                        
+                        <div class="command-block">
+                            <button class="copy-btn"><i class="fas fa-copy"></i> Copy</button>
+                            <div class="command-title"><i class="fas fa-terminal"></i> Ligand Topology Command (ACPYPE)</div>
+                            <pre>acpype -i LIG.mol2 -b LIG</pre>
+                        </div>
+                        
+                        <div class="note">
+                            <p class="note-title"><i class="fas fa-exclamation-circle"></i> T4 Lysozyme Example: JZ4 Ligand Workflow</p>
+                            <p>For the T4 lysozyme L99A/M102Q system (PDB 3HTB) with JZ4 ligand (2-propylphenol):</p>
+                            <ol style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                                <li>Download PDB 3HTB from RCSB</li>
+                                <li>Strip out waters, PO4, and BME: <code>grep -v "HOH\|PO4\|BME" 3HTB.pdb > 3HTB_clean.pdb</code></li>
+                                <li>Extract JZ4 ligand: <code>grep JZ4 3HTB_clean.pdb > jz4.pdb</code></li>
+                                <li>Add hydrogens using Avogadro: Build → Add Hydrogens → Save as jz4.mol2</li>
+                                <li>Fix mol2 file: Set consistent residue name/number and sort bonds</li>
+                                <li>Upload to CGenFF server to get CHARMM topology (.str file)</li>
+                                <li>Convert using: <code>python cgenff_charmm2gmx.py JZ4 jz4.mol2 jz4.str charmm36-jul2022.ff</code></li>
+                            </ol>
+                        </div>
+                        
+                        <div class="tip">
+                            <div class="tip-title"><i class="fas fa-lightbulb"></i> Ligand Parameterization Quality Control</div>
+                            <p>After generating topology files, perform these critical checks:</p>
+                            <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                                <li>Verify partial charges sum to the expected total charge (use antechamber -c resp to improve charge accuracy)</li>
+                                <li>Check for missing parameters in the .itp file (search for "X X X X X X")</li>
+                                <li>Validate geometry by comparing with quantum mechanics calculations if possible</li>
+                                <li>Run a short energy minimization of the isolated ligand to check for bad contacts</li>
+                                <li>For CGenFF, check penalty scores - values < 10 are acceptable, 10-50 require validation</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="note">
+                            <p class="note-title"><i class="fas fa-exclamation-circle"></i> Important Note</p>
+                            <p>Correct the residue name in the generated .gro file from "UNK" to "LIG" for consistency. Also verify that atom names in the ligand topology match the naming convention of your force field.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="step-card">
+                    <div class="step-header">
+                        <div class="step-number">3</div>
+                        <h3>Create Complex</h3>
+                    </div>
+                    <div class="step-content">
+                        <p>Manually merge protein and ligand coordinate files into complex.gro.</p>
+                        
+                        <div class="command-block">
+                            <button class="copy-btn"><i class="fas fa-copy"></i> Copy</button>
+                            <div class="command-title"><i class="fas fa-terminal"></i> Complex Creation Command</div>
+                            <pre>cat REC.gro LIG.gro | sed '2c $(($(wc -l REC.gro | awk '{print $1}') + $(wc -l LIG.gro | awk '{print $1-3}')))' > complex.gro</pre>
+                        </div>
+                        
+                        <div class="note">
+                            <p class="note-title"><i class="fas fa-exclamation-circle"></i> T4 Lysozyme Example: Complex Building</p>
+                            <p>For T4 lysozyme with JZ4 ligand:</p>
+                            <ol style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                                <li>Copy protein coordinates: <code>cp 3HTB_processed.gro complex.gro</code></li>
+                                <li>Convert ligand to GRO format: <code>gmx editconf -f jz4_ini.pdb -o jz4.gro</code></li>
+                                <li>Paste ligand coordinates into complex.gro (below protein atoms, before box vectors)</li>
+                                <li>Update atom count: Increment second line by ligand atom count (22 for JZ4)</li>
+                            </ol>
+                        </div>
+                        
+                        <div class="tip">
+                            <div class="tip-title"><i class="fas fa-lightbulb"></i> Binding Pose Validation</div>
+                            <p>Before creating the simulation box:</p>
+                            <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                                <li>Visualize the complex to confirm the ligand is properly positioned in the binding site</li>
+                                <li>Check for steric clashes (atoms closer than 1.8 Å)</li>
+                                <li>Verify key hydrogen bonds and hydrophobic interactions match expected binding mode</li>
+                                <li>Consider running a short restrained simulation if the binding pose comes from docking</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="step-card">
+                    <div class="step-header">
+                        <div class="step-number">4</div>
+                        <h3>Build Topology</h3>
+                    </div>
+                    <div class="step-content">
+                        <p>Edit topol.top to include ligand parameters and topology.</p>
+                        
+                        <div class="command-block">
+                            <button class="copy-btn"><i class="fas fa-copy"></i> Copy</button>
+                            <div class="command-title"><i class="fas fa-terminal"></i> Topology Editing Command</div>
+                            <pre>; Include ligand topology
+#include "LIG.itp"
+; Update molecule count
+[ molecules ]
+Protein_chain_A     1
+LIG                 1</pre>
+                        </div>
+                        
+                        <div class="note">
+                            <p class="note-title"><i class="fas fa-exclamation-circle"></i> T4 Lysozyme Example: Topology Building</p>
+                            <p>For T4 lysozyme with JZ4 ligand:</p>
+                            <ol style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                                <li>Add ligand topology: Insert <code>#include "jz4.itp"</code> after position restraints</li>
+                                <li>Add ligand parameters: Insert <code>#include "jz4.prm"</code> at the TOP of topol.top</li>
+                                <li>Update molecule count: Add <code>JZ4 1</code> to [ molecules ] section</li>
+                            </ol>
+                            <p>Correct topology structure:</p>
+                            <pre>; Include forcefield parameters
+#include "./charmm36-jul2022.ff/forcefield.itp"
+
+; Include ligand parameters
+#include "jz4.prm"
+
+[ moleculetype ]
+; Name            nrexcl
+Protein_chain_A     3
+
+; Include Position restraint file
+#ifdef POSRES
+#include "posre.itp"
+#endif
+
+; Include ligand topology
+#include "jz4.itp"
+
+; Include water topology
+#include "./charmm36-jul2022.ff/tip3p.itp"
+
+[ molecules ]
+; Compound        #mols
+Protein_chain_A     1
+JZ4                 1</pre>
+                        </div>
+                        
+                        <div class="tip">
+                            <div class="tip-title"><i class="fas fa-lightbulb"></i> Topology Troubleshooting</div>
+                            <p>Common topology issues and solutions:</p>
+                            <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                                <li><strong>Error: Residue LIG not found</strong> → Verify residue name matches exactly in .gro and .itp files</li>
+                                <li><strong>Error: Not enough parameters</strong> → Check for missing atom types in .rtp file or use charmm2gmx.py for CHARMM topologies</li>
+                                <li><strong>Warning: Duplicate atom names</strong> → Ensure ligand atom names are unique within residue</li>
+                                <li><strong>System charge not integer</strong> → Verify ligand charge and ion counts match expected values</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="note">
+                            <p class="note-title"><i class="fas fa-exclamation-circle"></i> Critical Checkpoint</p>
+                            <p>After editing the topology, run <code>gmx check -f topol.top</code> to verify topology integrity before proceeding to simulation.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="steps-container" id="simulation">
+                <h2 class="section-title">
+                    <i class="fas fa-cogs"></i>
+                    Simulation Phase
+                </h2>
+                
+                <div class="step-card">
+                    <div class="step-header">
+                        <div class="step-number">5</div>
+                        <h3>Define Simulation Box</h3>
+                    </div>
+                    <div class="step-content">
+                        <p>Place the complex within a periodic simulation box.</p>
+                        
+                        <div class="command-block">
+                            <button class="copy-btn"><i class="fas fa-copy"></i> Copy</button>
+                            <div class="command-title"><i class="fas fa-terminal"></i> Box Creation Command</div>
+                            <pre>gmx editconf -f complex.gro -o newbox.gro -c -d 1.0 -bt dodecahedron</pre>
+                        </div>
+                        
+                        <div class="tip">
+                            <div class="tip-title"><i class="fas fa-lightbulb"></i> Box Size Considerations</div>
+                            <p>For protein-ligand systems:</p>
+                            <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                                <li><strong>1.0-1.2 nm buffer</strong> is standard for most globular proteins</li>
+                                <li><strong>Increase to 1.5 nm</strong> for highly charged proteins or systems with long loops</li>
+                                <li><strong>Dodecahedron</strong> is preferred for spherical systems (reduces water molecules by ~25% vs cubic)</li>
+                                <li><strong>Cubic</strong> may be better for elongated proteins or membrane systems</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="note">
+                            <p class="note-title"><i class="fas fa-exclamation-circle"></i> Validation Check</p>
+                            <p>After creating the box, visualize with <code>gmx view newbox.gro</code> to ensure the ligand is not too close to the periodic boundary.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="step-card">
+                    <div class="step-header">
+                        <div class="step-number">6</div>
+                        <h3>Solvation & Ions</h3>
+                    </div>
+                    <div class="step-content">
+                        <p>Fill the box with water and add ions to neutralize the system.</p>
+                        
+                        <div class="command-block">
+                            <button class="copy-btn"><i class="fas fa-copy"></i> Copy</button>
+                            <div class="command-title"><i class="fas fa-terminal"></i> Solvation Command</div>
+                            <pre>gmx solvate -cp newbox.gro -cs spc216.gro -p topol.top -o solv.gro</pre>
+                        </div>
+                        
+                        <div class="command-block">
+                            <button class="copy-btn"><i class="fas fa-copy"></i> Copy</button>
+                            <div class="command-title"><i class="fas fa-terminal"></i> Ion Addition Command</div>
+                            <pre>echo "SOL" | gmx genion -s ions.tpr -o solv_ions.gro -p topol.top -pname NA -nname CL -neutral -conc 0.15</pre>
+                        </div>
+                        
+                        <div class="tip">
+                            <div class="tip-title"><i class="fas fa-lightbulb"></i> Ionization Best Practices</div>
+                            <p>For physiological relevance:</p>
+                            <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                                <li>Use <code>-conc 0.15</code> to achieve 150 mM ionic strength (physiological salt concentration)</li>
+                                <li>For membrane proteins, consider asymmetric ion placement</li>
+                                <li>For highly charged proteins, verify the final ion count matches theoretical expectations</li>
+                                <li>After adding ions, check for ion placement inside protein cavities (may require manual adjustment)</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="note">
+                            <p class="note-title"><i class="fas fa-exclamation-circle"></i> Critical Note</p>
+                            <p>When prompted for the group during <code>genion</code>, select "SOL" (water molecules) to replace with ions. Do not select protein or ligand groups.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="step-card">
+                    <div class="step-header">
+                        <div class="step-number">7</div>
+                        <h3>Energy Minimization</h3>
+                    </div>
+                    <div class="step-content">
+                        <p>Relax the system using the minim.mdp template.</p>
+                        
+                        <div class="command-block">
+                            <button class="copy-btn"><i class="fas fa-copy"></i> Copy</button>
+                            <div class="command-title"><i class="fas fa-terminal"></i> Preprocessing Command</div>
+                            <pre>gmx grompp -f minim.mdp -c solv_ions.gro -p topol.top -o em.tpr</pre>
+                        </div>
+                        
+                        <div class="command-block">
+                            <button class="copy-btn"><i class="fas fa-copy"></i> Copy</button>
+                            <div class="command-title"><i class="fas fa-terminal"></i> Minimization Command</div>
+                            <pre>gmx mdrun -v -deffnm em</pre>
+                        </div>
+                        
+                        <div class="tip">
+                            <div class="tip-title"><i class="fas fa-lightbulb"></i> Minimization Quality Control</div>
+                            <p>Check the minimization output for:</p>
+                            <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                                <li>Convergence to Fmax < 1000 kJ/mol/nm (typically should reach 100-500)</li>
+                                <li>No warnings about LINCS warnings (indicates bad geometry)</li>
+                                <li>Gradual decrease in potential energy without large jumps</li>
+                                <li>If minimization fails, check for bad contacts in the ligand binding site</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="note">
+                            <p class="note-title"><i class="fas fa-exclamation-circle"></i> Troubleshooting Tip</p>
+                            <p>If minimization fails to converge, try adding position restraints on the protein backbone and ligand with <code>define = -DPOSRES -DPOSRES_LIG</code> in minim.mdp and run for 500 steps before full minimization.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="step-card">
+                    <div class="step-header">
+                        <div class="step-number">8</div>
+                        <h3>Equilibration (NVT & NPT)</h3>
+                    </div>
+                    <div class="step-content">
+                        <p>Equilibrate the system at target temperature and pressure.</p>
+                        
+                        <div class="command-block">
+                            <button class="copy-btn"><i class="fas fa-copy"></i> Copy</button>
+                            <div class="command-title"><i class="fas fa-terminal"></i> NVT Equilibration Command</div>
+                            <pre>gmx grompp -f nvt.mdp -c em.gro -r em.gro -p topol.top -n index.ndx -o nvt.tpr</pre>
+                        </div>
+                        
+                        <div class="command-block">
+                            <button class="copy-btn"><i class="fas fa-copy"></i> Copy</button>
+                            <div class="command-title"><i class="fas fa-terminal"></i> NVT Execution Command</div>
+                            <pre>gmx mdrun -v -deffnm nvt</pre>
+                        </div>
+                        
+                        <div class="command-block">
+                            <button class="copy-btn"><i class="fas fa-copy"></i> Copy</button>
+                            <div class="command-title"><i class="fas fa-terminal"></i> NPT Equilibration Command</div>
+                            <pre>gmx grompp -f npt.mdp -c nvt.gro -r nvt.gro -t nvt.cpt -p topol.top -n index.ndx -o npt.tpr</pre>
+                        </div>
+                        
+                        <div class="command-block">
+                            <button class="copy-btn"><i class="fas fa-copy"></i> Copy</button>
+                            <div class="command-title"><i class="fas fa-terminal"></i> NPT Execution Command</div>
+                            <pre>gmx mdrun -v -deffnm npt</pre>
+                        </div>
+                        
+                        <div class="note">
+                            <p class="note-title"><i class="fas fa-exclamation-circle"></i> T4 Lysozyme Example: Ligand Restraints</p>
+                            <p>For systems like T4 lysozyme with JZ4 ligand:</p>
+                            <ol style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                                <li>Create ligand index group: <code>gmx make_ndx -f jz4.gro -o index_jz4.ndx</code></li>
+                                <li>Generate position restraints: <code>gmx genrestr -f jz4.gro -n index_jz4.ndx -o posre_jz4.itp -fc 1000 1000 1000</code></li>
+                                <li>Add to topology after ligand topology section:</li>
+                            </ol>
+                            <pre>; Include ligand topology
+#include "jz4.itp"
+
+; Ligand position restraints
+#ifdef POSRES_LIG
+#include "posre_jz4.itp"
+#endif</pre>
+                            <p>During equilibration, use <code>define = -DPOSRES -DPOSRES_LIG</code> in nvt.mdp and npt.mdp</p>
+                        </div>
+                        
+                        <div class="tip">
+                            <div class="tip-title"><i class="fas fa-lightbulb"></i> Equilibration Monitoring</div>
+                            <p>During equilibration, monitor these key metrics:</p>
+                            <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                                <li><strong>Temperature</strong>: Should stabilize at 300K with fluctuations < ±5K</li>
+                                <li><strong>Pressure</strong>: Should stabilize at 1 bar with fluctuations < ±100 bar</li>
+                                <li><strong>Density</strong>: Should converge to ~1000 kg/m³ for water systems</li>
+                                <li><strong>Potential Energy</strong>: Should stabilize without large jumps</li>
+                                <li><strong>Protein RMSD</strong>: Should stabilize below 0.2 nm after NPT</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="note">
+                            <p class="note-title"><i class="fas fa-exclamation-circle"></i> Critical Checkpoint</p>
+                            <p>Before production run, verify equilibration by plotting temperature, pressure, and density using <code>gmx energy -f npt.edr</code>. The system should be fully equilibrated before proceeding.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="step-card">
+                    <div class="step-header">
+                        <div class="step-number">9</div>
+                        <h3>Production MD (10ns)</h3>
+                    </div>
+                    <div class="step-content">
+                        <p>Run the final 10ns production simulation using the md.mdp template.</p>
+                        
+                        <div class="command-block">
+                            <button class="copy-btn"><i class="fas fa-copy"></i> Copy</button>
+                            <div class="command-title"><i class="fas fa-terminal"></i> Production Preprocessing Command</div>
+                            <pre>gmx grompp -f md.mdp -c npt.gro -t npt.cpt -p topol.top -n index.ndx -o md.tpr</pre>
+                        </div>
+                        
+                        <div class="command-block">
+                            <button class="copy-btn"><i class="fas fa-copy"></i> Copy</button>
+                            <div class="command-title"><i class="fas fa-terminal"></i> Production Execution Command</div>
+                            <pre>gmx mdrun -v -deffnm md -nt 5 -gpu_id 0</pre>
+                        </div>
+                        
+                        <div class="tip">
+                            <div class="tip-title"><i class="fas fa-lightbulb"></i> Production Run Best Practices</div>
+                            <p>For reliable binding studies:</p>
+                            <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                                <li>Run multiple replicates (3-5) with different initial velocities for statistical significance</li>
+                                <li>For binding studies, 10ns is minimum; 50-100ns recommended for stable complexes</li>
+                                <li>Set <code>nstxout-compressed = 5000</code> in md.mdp to save disk space (1 frame/10ps)</li>
+                                <li>Monitor simulation stability with <code>gmx check -f md.xtc</code> periodically</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="note">
+                            <p class="note-title"><i class="fas fa-exclamation-circle"></i> Note</p>
+                            <p>The md.mdp template is configured for a 10ns production run. The <code>-nt 5</code> flag specifies 5 CPU threads, and <code>-gpu_id 0</code> enables GPU acceleration. For production runs, consider using <code>-maxh 24</code> to checkpoint every 24 hours.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="steps-container" id="analysis">
+                <h2 class="section-title">
+                    <i class="fas fa-chart-line"></i>
+                    Analysis Phase
+                </h2>
+                
+                <div class="step-card">
+                    <div class="step-header">
+                        <div class="step-number">10</div>
+                        <h3>Trajectory Processing</h3>
+                    </div>
+                    <div class="step-content">
+                        <p>Center the trajectory and correct for periodic boundary conditions.</p>
+                        
+                        <div class="command-block">
+                            <button class="copy-btn"><i class="fas fa-copy"></i> Copy</button>
+                            <div class="command-title"><i class="fas fa-terminal"></i> Trajectory Processing Command</div>
+                            <pre>echo "Protein System" | gmx trjconv -s md.tpr -f md.xtc -o md_centered.xtc -center -pbc mol -ur compact -n index.ndx</pre>
+                        </div>
+                        
+                        <div class="note">
+                            <p class="note-title"><i class="fas fa-exclamation-circle"></i> T4 Lysozyme Example: Trajectory Analysis</p>
+                            <p>For T4 lysozyme with JZ4 ligand:</p>
+                            <ol style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                                <li>Center on protein: <code>echo "Protein" | gmx trjconv -s md.tpr -f md.xtc -o md_centered.xtc -center -pbc mol -ur compact -n index.ndx</code></li>
+                                <li>Calculate JZ4-Gln102 distance: <code>gmx distance -s md.tpr -f md_centered.xtc -select 'resname "JZ4" and name OAB plus resid 102 and name OE1' -oall</code></li>
+                                <li>Calculate hydrogen bond angle: <code>gmx angle -f md_centered.xtc -n index.ndx -ov angle.xvg</code></li>
+                                <li>Calculate ligand RMSD: <code>gmx rms -s em.tpr -f md_centered.xtc -n index.ndx -o rmsd_jz4.xvg</code></li>
+                            </ol>
+                        </div>
+                        
+                        <div class="tip">
+                            <div class="tip-title"><i class="fas fa-lightbulb"></i> Advanced Trajectory Processing</div>
+                            <p>For binding analysis, consider these additional steps:</p>
+                            <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                                <li>Use <code>-pbc nojump</code> before <code>-pbc mol</code> for systems with large conformational changes</li>
+                                <li>Apply rotational fitting to the protein backbone before centering</li>
+                                <li>Create a separate trajectory for just the binding site residues (residues within 5Å of ligand)</li>
+                                <li>Use <code>-dt 10</code> to reduce trajectory size for analysis (1 frame/10ps)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="step-card">
+                    <div class="step-header">
+                        <div class="step-number">11</div>
+                        <h3>Stability Analysis (RMSD)</h3>
+                    </div>
+                    <div class="step-content">
+                        <p>Calculate RMSD for protein backbone and ligand.</p>
+                        
+                        <div class="command-block">
+                            <button class="copy-btn"><i class="fas fa-copy"></i> Copy</button>
+                            <div class="command-title"><i class="fas fa-terminal"></i> Protein RMSD Command</div>
+                            <pre>gmx rms -s em.tpr -f md_centered.xtc -n index.ndx -o protein_rmsd.xvg</pre>
+                        </div>
+                        
+                        <div class="command-block">
+                            <button class="copy-btn"><i class="fas fa-copy"></i> Copy</button>
+                            <div class="command-title"><i class="fas fa-terminal"></i> Ligand RMSD Command</div>
+                            <pre>gmx rms -s em.tpr -f md_centered.xtc -n index.ndx -o ligand_rmsd.xvg</pre>
+                        </div>
+                        
+                        <div class="note">
+                            <p class="note-title"><i class="fas fa-exclamation-circle"></i> T4 Lysozyme Example: JZ4 Binding Analysis</p>
+                            <p>For T4 lysozyme with JZ4 ligand:</p>
+                            <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                                <li>Typical JZ4 RMSD: ~0.1 nm (1 Å), indicating stable binding pose</li>
+                                <li>JZ4-Gln102 distance: ~0.31 ± 0.05 nm (consistent with hydrogen bond)</li>
+                                <li>Hydrogen bond angle: ~23 ± 9° (acceptor-donor-hydrogen) or ~147 ± 11° (donor-hydrogen-acceptor)</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="tip">
+                            <div class="tip-title"><i class="fas fa-lightbulb"></i> Binding Stability Interpretation</div>
+                            <p>For protein-ligand systems:</p>
+                            <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                                <li><strong>Ligand RMSD < 1.5 Å</strong>: Stable binding mode, ligand remains in crystallographic pose</li>
+                                <li><strong>Ligand RMSD 1.5-3.0 Å</strong>: Moderate flexibility, may indicate multiple binding poses</li>
+                                <li><strong>Ligand RMSD > 3.0 Å</strong>: Unstable binding, ligand may be partially or fully dissociated</li>
+                                <li>Compare with protein backbone RMSD to distinguish protein flexibility from ligand instability</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="note">
+                            <p class="note-title"><i class="fas fa-exclamation-circle"></i> Advanced Analysis</p>
+                            <p>For more detailed binding analysis, calculate RMSD against the initial binding pose rather than the minimized structure by using <code>-f0 md_centered.xtc</code> in the rms command.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="step-card">
+                    <div class="step-header">
+                        <div class="step-number">12</div>
+                        <h3>Interaction Energy</h3>
+                    </div>
+                    <div class="step-content">
+                        <p>Calculate protein-ligand interaction energy using the le.mdp template.</p>
+                        
+                        <div class="command-block">
+                            <button class="copy-btn"><i class="fas fa-copy"></i> Copy</button>
+                            <div class="command-title"><i class="fas fa-terminal"></i> Energy Preprocessing Command</div>
+                            <pre>gmx grompp -f ie.mdp -c npt.gro -t npt.cpt -p topol.top -n index.ndx -o ie.tpr</pre>
+                        </div>
+                        
+                        <div class="command-block">
+                            <button class="copy-btn"><i class="fas fa-copy"></i> Copy</button>
+                            <div class="command-title"><i class="fas fa-terminal"></i> Energy Calculation Command</div>
+                            <pre>gmx mdrun -deffnm ie -rerun md.xtc -nb cpu</pre>
+                        </div>
+                        
+                        <div class="command-block">
+                            <button class="copy-btn"><i class="fas fa-copy"></i> Copy</button>
+                            <div class="command-title"><i class="fas fa-terminal"></i> Energy Extraction Command</div>
+                            <pre>gmx energy -f ie.edr -o interaction_energy.xvg</pre>
+                        </div>
+                        
+                        <div class="note">
+                            <p class="note-title"><i class="fas fa-exclamation-circle"></i> T4 Lysozyme Example: JZ4 Interaction Energy</p>
+                            <p>For T4 lysozyme with JZ4 ligand using CHARMM force field:</p>
+                            <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                                <li>Coulombic interaction energy: -20.5 ± 7.4 kJ/mol</li>
+                                <li>Lennard-Jones energy: -99.1 ± 7.2 kJ/mol</li>
+                                <li>Total interaction energy: -119.6 ± 10.3 kJ/mol</li>
+                            </ul>
+                            <p><strong>Note:</strong> CHARMM is parametrized to target quantum mechanical interaction energies with water, making these values meaningful. This is not true for all force fields.</p>
+                        </div>
+                        
+                        <div class="tip">
+                            <div class="tip-title"><i class="fas fa-lightbulb"></i> Energy Analysis Best Practices</i></div>
+                            <p>For reliable binding energy estimates:</p>
+                            <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                                <li>Analyze the last 50-80% of the trajectory after the system has equilibrated</li>
+                                <li>Calculate per-residue energy decomposition to identify key binding residues</li>
+                                <li>Combine with MM/PBSA or MM/GBSA for more accurate binding free energies</li>
+                                <li>Compare with experimental binding data if available for validation</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="note">
+                            <p class="note-title"><i class="fas fa-exclamation-circle"></i> Advanced Tip</p>
+                            <p>For more accurate binding energy calculations, use <code>gmx mdrun -deffnm ie -rerun md.xtc -nb gpu</code> if GPU is available, and consider running MMPBSA.py for more sophisticated free energy calculations.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="steps-container">
+                <h2 class="section-title">
+                    <i class="fas fa-book-reader"></i>
+                    Validation & Interpretation
+                </h2>
+                <div class="step-card">
+                    <div class="step-header">
+                        <div class="step-number">13</div>
+                        <h3>Validate Your Simulation Results</h3>
+                    </div>
+                    <div class="step-content">
+                        <p>For protein-ligand simulations, use these validation criteria to assess simulation quality:</p>
+                        
+                        <table class="pdb-table">
+                            <thead>
+                                <tr>
+                                    <th>Metric</th>
+                                    <th>Expected Value</th>
+                                    <th>Interpretation</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Protein Backbone RMSD</td>
+                                    <td>1.5-3.0 Å</td>
+                                    <td>Indicates stable protein structure; values >4.0 Å suggest unfolding</td>
+                                </tr>
+                                <tr>
+                                    <td>Ligand RMSD</td>
+                                    <td>< 2.0 Å</td>
+                                    <td>Indicates stable binding; values >3.0 Å suggest partial/full dissociation</td>
+                                </tr>
+                                <tr>
+                                    <td>Hydrogen Bond Occupancy</td>
+                                    <td>>70% for key interactions</td>
+                                    <td>Critical for specific binding; lower occupancy indicates instability</td>
+                                </tr>
+                                <tr>
+                                    <td>Total Interaction Energy</td>
+                                    <td>-50 to -300 kJ/mol</td>
+                                    <td>Correlates with experimental binding affinity; compare with literature</td>
+                                </tr>
+                                <tr>
+                                    <td>Simulation Energy Drift</td>
+                                    <td>< 5 kJ/mol/ns</td>
+                                    <td>Indicates stable integration; higher values suggest numerical instability</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
+                        <div class="note">
+                            <p class="note-title"><i class="fas fa-exclamation-circle"></i> Publication-Worthy Analysis</p>
+                            <p>To produce publication-quality results for protein-ligand systems:</p>
+                            <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                                <li>Run 3-5 independent replicates with different initial velocities</li>
+                                <li>Extend simulation time to 50-100ns for stable complexes</li>
+                                <li>Perform MM/PBSA or MM/GBSA binding free energy calculations</li>
+                                <li>Calculate binding energy components (electrostatic, van der Waals, etc.)</li>
+                                <li>Compare with experimental binding data when available</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="tip">
+                            <div class="tip-title"><i class="fas fa-lightbulb"></i> Binding Mode Validation</div>
+                            <p>Confirm your binding mode is physically meaningful by checking:</p>
+                            <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                                <li>Consistency with known SAR (structure-activity relationship) data</li>
+                                <li>Presence of key hydrogen bonds observed in crystal structures</li>
+                                <li>Hydrophobic contacts with expected residues</li>
+                                <li>Water-mediated interactions that match crystallographic waters</li>
+                                <li>Comparison with docking predictions (should be consistent)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="steps-container">
+                <h2 class="section-title">
+                    <i class="fas fa-flask"></i>
+                    Case Study: T4 Lysozyme L99A/M102Q with JZ4
+                </h2>
+                <div class="step-card">
+                    <div class="step-header">
+                        <div class="step-number">14</div>
+                        <h3>Complete Workflow Example</h3>
+                    </div>
+                    <div class="step-content">
+                        <p>This case study demonstrates a complete protein-ligand simulation using T4 lysozyme L99A/M102Q (PDB: 3HTB) with JZ4 ligand (2-propylphenol).</p>
+                        
+                        <div class="tip">
+                            <div class="tip-title"><i class="fas fa-lightbulb"></i> System Preparation</div>
+                            <p>Step-by-step preparation of the T4 lysozyme-JZ4 system:</p>
+                            <ol style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                                <li>Download PDB 3HTB from RCSB: <code>wget https://files.rcsb.org/download/3HTB.pdb</code></li>
+                                <li>Remove unwanted molecules: <code>grep -v "HOH\|PO4\|BME" 3HTB.pdb > 3HTB_clean.pdb</code></li>
+                                <li>Extract JZ4 ligand: <code>grep JZ4 3HTB_clean.pdb > jz4.pdb</code></li>
+                                <li>Process protein: <code>gmx pdb2gmx -f 3HTB_clean.pdb -o protein.gro -ter -ignh</code></li>
+                                <li>Select CHARMM36 force field, default water model, and protein termini</li>
+                            </ol>
+                        </div>
+                        
+                        <div class="note">
+                            <p class="note-title"><i class="fas fa-exclamation-circle"></i> Ligand Parameterization with CGenFF</p>
+                            <p>Detailed steps for JZ4 ligand parameterization:</p>
+                            <ol style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                                <li>Add hydrogens in Avogadro: Build → Add Hydrogens → Save as jz4.mol2</li>
+                                <li>Edit jz4.mol2: Set consistent residue name/number (all "1 JZ4")</li>
+                                <li>Fix bond ordering: <code>perl sort_mol2_bonds.pl jz4.mol2 jz4_fix.mol2</code></li>
+                                <li>Upload jz4_fix.mol2 to CGenFF server to get JZ4 topology (.str file)</li>
+                                <li>Convert to GROMACS format: <code>python cgenff_charmm2gmx.py JZ4 jz4_fix.mol2 jz4.str charmm36-jul2022.ff</code></li>
+                                <li>Verify penalty scores are acceptable (all < 10 for JZ4)</li>
+                            </ol>
+                        </div>
+                        
+                        <div class="command-block">
+                            <button class="copy-btn"><i class="fas fa-copy"></i> Copy</button>
+                            <div class="command-title"><i class="fas fa-terminal"></i> Complete Complex Building Commands</div>
+                            <pre># Convert ligand to GRO format
+gmx editconf -f jz4_ini.pdb -o jz4.gro
+
+# Create complex
+cp protein.gro complex.gro
+cat jz4.gro | tail -n +3 | head -n -1 >> complex.gro
+sed -i "2s/.*/$(($(wc -l protein.gro | awk '{print $1-3}') + $(wc -l jz4.gro | awk '{print $1-3}')))/" complex.gro
+
+# Edit topology
+echo -e "\n#include \"jz4.prm\"" | cat - topol.top > temp && mv temp topol.top
+sed -i '/#include.*posre\.itp/a \\n#include "jz4.itp"' topol.top
+echo -e "\nJZ4                 1" >> topol.top</pre>
+                        </div>
+                        
+                        <div class="tip">
+                            <div class="tip-title"><i class="fas fa-lightbulb"></i> Special Equilibration for Protein-Ligand Systems</div>
+                            <p>For T4 lysozyme-JZ4 system:</p>
+                            <ol style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                                <li>Create ligand position restraints: <code>gmx make_ndx -f jz4.gro -o index_jz4.ndx</code></li>
+                                <li>Generate restraints: <code>gmx genrestr -f jz4.gro -n index_jz4.ndx -o posre_jz4.itp -fc 1000 1000 1000</code></li>
+                                <li>Add to topology after ligand section:</li>
+                            </ol>
+                            <pre>; Include ligand topology
+#include "jz4.itp"
+
+; Ligand position restraints
+#ifdef POSRES_LIG
+#include "posre_jz4.itp"
+#endif</pre>
+                            <p>Use <code>define = -DPOSRES -DPOSRES_LIG</code> in nvt.mdp and npt.mdp for equilibration</p>
+                        </div>
+                        
+                        <div class="note">
+                            <p class="note-title"><i class="fas fa-exclamation-circle"></i> Key Analysis for T4 Lysozyme-JZ4 System</p>
+                            <p>Important analyses specific to this system:</p>
+                            <ol style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                                <li>JZ4-Gln102 hydrogen bond: <code>gmx distance -s md.tpr -f md_centered.xtc -select 'resname "JZ4" and name OAB plus resid 102 and name OE1' -oall</code></li>
+                                <li>Ligand RMSD relative to protein: <code>gmx rms -s em.tpr -f md_centered.xtc -n index.ndx -o rmsd_jz4.xvg</code></li>
+                                <li>Interaction energy: <code>gmx energy -f ie.edr -o interaction_energy.xvg</code></li>
+                            </ol>
+                            <p>Expected results for stable binding:</p>
+                            <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                                <li>JZ4-Gln102 distance: ~0.31 nm (hydrogen bond)</li>
+                                <li>Ligand RMSD: ~0.1 nm (stable binding pose)</li>
+                                <li>Interaction energy: ~-120 kJ/mol (strong binding)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer">
+                <p>Built with <i class="fas fa-heart" style="color: #f97316;"></i> by <a href="https://github.com/Deon-07" target="_blank" rel="noopener noreferrer">Deon</a></p>
+                <p>Share, contribute, or report issues on <a href="https://github.com/Deon-07" target="_blank" rel="noopener noreferrer">GitHub</a></p>
+                <p class="mt-2">© 2025 GROMACS Simulation Guide | For educational purposes</p>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Enhanced copy button functionality
+        document.querySelectorAll('.copy-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const commandBlock = this.closest('.command-block');
+                const preElement = commandBlock.querySelector('pre');
+                const commandText = preElement.textContent;
+                
+                // Copy to clipboard
+                navigator.clipboard.writeText(commandText).then(() => {
+                    // Visual feedback
+                    this.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                    this.classList.add('copied');
+                    
+                    // Reset after 2 seconds
+                    setTimeout(() => {
+                        this.innerHTML = '<i class="fas fa-copy"></i> Copy';
+                        this.classList.remove('copied');
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Failed to copy: ', err);
+                });
+                
+                // Subtle animation for the command block
+                commandBlock.style.boxShadow = '0 0 0 2px var(--primary-light)';
+                setTimeout(() => {
+                    commandBlock.style.boxShadow = '';
+                }, 500);
+            });
+        });
+        
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 100,
+                        behavior: 'smooth'
+                    });
+                    // Update active nav link
+                    document.querySelectorAll('.nav-link').forEach(link => {
+                        link.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                }
+            });
+        });
+        
+        // Update active nav link on scroll
+        window.addEventListener('scroll', () => {
+            const sections = document.querySelectorAll('.download-section, .steps-container');
+            let currentSection = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (scrollY >= sectionTop - 150) {
+                    currentSection = section.getAttribute('id');
+                }
+            });
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === `#${currentSection}`) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
